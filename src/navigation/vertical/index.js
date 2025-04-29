@@ -16,6 +16,16 @@ const navigation = () => {
       path: '/customers',
       title: 'Khách Hàng',
       icon: 'tabler:users'
+    },
+    {
+      path: '/services',
+      title: 'Dịch Vụ',
+      icon: 'tabler:tools'
+    },
+    {
+      path: '/settings',
+      title: 'Cài Đặt',
+      icon: 'tabler:settings'
     }
   ]
 }
