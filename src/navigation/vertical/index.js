@@ -11,6 +11,11 @@ const navigation = () => {
       path: '/acl',
       title: 'Access Control',
       icon: 'tabler:shield'
+    },
+    {
+      path: '/customers',
+      title: 'Khách Hàng',
+      icon: 'tabler:users'
     }
   ]
 }

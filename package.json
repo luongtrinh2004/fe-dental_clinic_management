@@ -69,6 +69,7 @@
     "prettier": "2.8.4"
   },
   "resolutions": {
+    "proxy": "http://localhost:5000",
     "minipass": "5.0.0",
     "@mui/x-data-grid/@mui/system": "5.12.1",
     "react-credit-cards/prop-types": "15.7.2",
