@@ -37,6 +37,7 @@ const CustomersPage = () => {
     gender: '',
     dateOfBirth: '',
     phone: '',
+    appointmentDate: '',
     address: '',
     medicalHistory: '',
     note: '',
@@ -60,7 +61,10 @@ const CustomersPage = () => {
   }
 
   const filteredPatients = patients.filter(
-    patient => patient.name.toLowerCase().includes(search.toLowerCase()) || patient.phone.includes(search)
+    patient =>
+      patient.name.toLowerCase().includes(search.toLowerCase()) ||
+      patient.phone.includes(search) ||
+      (patient.patientCode && patient.patientCode.includes(search))
   )
 
   const handleDelete = async id => {
@@ -80,6 +84,7 @@ const CustomersPage = () => {
       gender: patient.gender,
       dateOfBirth: patient.dateOfBirth ? patient.dateOfBirth.substring(0, 10) : '',
       phone: patient.phone,
+      appointmentDate: patient.appointmentDate ? patient.appointmentDate.substring(0, 10) : '',
       address: patient.address,
       medicalHistory: patient.medicalHistory || '',
       note: patient.note || '',
@@ -97,6 +102,7 @@ const CustomersPage = () => {
       gender: '',
       dateOfBirth: '',
       phone: '',
+      appointmentDate: '',
       address: '',
       medicalHistory: '',
       note: '',
@@ -129,7 +135,7 @@ const CustomersPage = () => {
           <CardHeader title='Tìm kiếm bệnh nhân' />
           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TextField
-              label='Nhập tên hoặc số điện thoại'
+              label='Nhập tên, mã BN hoặc số điện thoại'
               variant='outlined'
               fullWidth
               size='medium'
@@ -156,6 +162,7 @@ const CustomersPage = () => {
                     <TableCell>Giới tính</TableCell>
                     <TableCell>Ngày sinh</TableCell>
                     <TableCell>Số điện thoại</TableCell>
+                    <TableCell>Ngày khám</TableCell>
                     <TableCell>Dịch vụ</TableCell>
                     <TableCell>Ghi chú</TableCell>
                     <TableCell>Chi phí</TableCell>
@@ -171,15 +178,20 @@ const CustomersPage = () => {
                       <TableCell>{patient.name}</TableCell>
                       <TableCell>{patient.gender}</TableCell>
                       <TableCell>
-                        {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
+                        {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
                       </TableCell>
                       <TableCell>{patient.phone}</TableCell>
+                      <TableCell>
+                        {patient.appointmentDate
+                          ? new Date(patient.appointmentDate).toLocaleDateString('vi-VN')
+                          : 'Chưa khám'}
+                      </TableCell>
                       <TableCell>{patient.medicalHistory || 'N/A'}</TableCell>
                       <TableCell>{patient.note || 'N/A'}</TableCell>
                       <TableCell>{patient.cost?.toLocaleString() || '0'} ₫</TableCell>
                       <TableCell>
                         {patient.nextAppointmentDate
-                          ? new Date(patient.nextAppointmentDate).toLocaleDateString()
+                          ? new Date(patient.nextAppointmentDate).toLocaleDateString('vi-VN')
                           : 'Chưa hẹn'}
                       </TableCell>
                       <TableCell>{patient.status}</TableCell>
@@ -240,6 +252,14 @@ const CustomersPage = () => {
             value={formData.phone}
             onChange={e => setFormData({ ...formData, phone: e.target.value })}
             fullWidth
+          />
+          <TextField
+            label='Ngày khám'
+            type='date'
+            value={formData.appointmentDate}
+            onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
           />
           <TextField
             label='Địa chỉ'
