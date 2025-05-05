@@ -33,8 +33,13 @@ const FooterContent = () => {
           ❤️
         </Box>
         {`by`}
-        <Typography sx={{ ml: 1 }} target='_blank' href='https://phenikaa-x.com/' component={StyledCompanyName}>
-          PhenikaaX
+        <Typography
+          sx={{ ml: 1 }}
+          target='_blank'
+          href='https://www.facebook.com/luong.trinh.283901'
+          component={StyledCompanyName}
+        >
+          Lương Trịnh
         </Typography>
       </Typography>
     </Box>

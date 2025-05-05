@@ -13,7 +13,9 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Typography
+  Typography,
+  Button,
+  Box
 } from '@mui/material'
 
 const ServicePage = () => {
@@ -31,6 +33,16 @@ const ServicePage = () => {
     } catch (err) {
       console.error('Lỗi lấy danh sách dịch vụ:', err)
     }
+  }
+
+  const handleEdit = service => {
+    console.log('Chỉnh sửa:', service)
+    // TODO: Hiện modal chỉnh sửa
+  }
+
+  const handleDelete = service => {
+    console.log('Xoá:', service)
+    // TODO: Xác nhận rồi gọi API xoá
   }
 
   const filteredServices = services.filter(service =>
@@ -61,16 +73,17 @@ const ServicePage = () => {
               <Table size='small'>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f0f0f0' }}>
-                    <TableCell>Tên dịch vụ</TableCell>
-                    <TableCell sx={{ textAlign: 'left' }}>Loại</TableCell>
-                    <TableCell>Thành tiền</TableCell>
-                    <TableCell>Bảo hành</TableCell>
+                    <TableCell sx={{ width: '25%', textAlign: 'left' }}>Tên dịch vụ</TableCell>
+                    <TableCell sx={{ width: '20%', textAlign: 'left' }}>Loại</TableCell>
+                    <TableCell sx={{ width: '20%', textAlign: 'left' }}>Thành tiền</TableCell>
+                    <TableCell sx={{ width: '15%', textAlign: 'left' }}>Bảo hành</TableCell>
+                    <TableCell sx={{ width: '20%', textAlign: 'center' }}>Hành động</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredServices.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4}>
+                      <TableCell colSpan={5}>
                         <Typography align='center'>Không tìm thấy dịch vụ</Typography>
                       </TableCell>
                     </TableRow>
@@ -81,11 +94,12 @@ const ServicePage = () => {
                       {section.title && (
                         <TableRow sx={{ bgcolor: '#1976d2' }}>
                           <TableCell
-                            colSpan={4}
+                            colSpan={5}
                             sx={{
                               color: 'white',
                               fontWeight: 'bold',
-                              textAlign: 'center'
+                              textAlign: 'center',
+                              textTransform: 'uppercase'
                             }}
                           >
                             {section.title}
@@ -104,6 +118,21 @@ const ServicePage = () => {
                                 <TableCell sx={{ textAlign: 'left' }}>{srv.types[0].type}</TableCell>
                                 <TableCell>{srv.types[0].price}</TableCell>
                                 <TableCell>{srv.types[0].warranty || '-'}</TableCell>
+                                <TableCell rowSpan={srv.types.length} align='center'>
+                                  <Box display='flex' gap={1} justifyContent='center'>
+                                    <Button size='small' variant='outlined' onClick={() => handleEdit(srv)}>
+                                      Chỉnh sửa
+                                    </Button>
+                                    <Button
+                                      size='small'
+                                      variant='outlined'
+                                      color='error'
+                                      onClick={() => handleDelete(srv)}
+                                    >
+                                      Xóa
+                                    </Button>
+                                  </Box>
+                                </TableCell>
                               </TableRow>
                               {srv.types.slice(1).map((t, k) => (
                                 <TableRow key={k}>
@@ -119,6 +148,21 @@ const ServicePage = () => {
                               <TableCell sx={{ textAlign: 'left' }}>{srv.types?.[0]?.type || '-'}</TableCell>
                               <TableCell>{srv.types?.[0]?.price || srv.price || '-'}</TableCell>
                               <TableCell>{srv.types?.[0]?.warranty || srv.warranty || '-'}</TableCell>
+                              <TableCell align='center'>
+                                <Box display='flex' gap={1} justifyContent='center'>
+                                  <Button size='small' variant='outlined' onClick={() => handleEdit(srv)}>
+                                    Chỉnh sửa
+                                  </Button>
+                                  <Button
+                                    size='small'
+                                    variant='outlined'
+                                    color='error'
+                                    onClick={() => handleDelete(srv)}
+                                  >
+                                    Xóa
+                                  </Button>
+                                </Box>
+                              </TableCell>
                             </TableRow>
                           )}
                         </Fragment>
