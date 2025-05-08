@@ -3305,6 +3305,11 @@ react-apexcharts@1.4.0:
   dependencies:
     prop-types "^15.5.7"
 
+react-date-object@^2.1.8:
+  version "2.1.9"
+  resolved "https://registry.npmjs.org/react-date-object/-/react-date-object-2.1.9.tgz"
+  integrity sha512-BHxD/quWOTo9fLKV/cfL/M31ePoj4a1JaJ/CnOf8Ndg3mrkh4x9wEMMkCfTrzduxDOgU8ZgR8uarhqI5G71sTg==
+
 react-datepicker@4.11.0:
   version "4.11.0"
   resolved "https://registry.npmjs.org/react-datepicker/-/react-datepicker-4.11.0.tgz"
@@ -3335,6 +3340,11 @@ react-draft-wysiwyg@1.15.0:
     html-to-draftjs "^1.5.0"
     linkify-it "^2.2.0"
     prop-types "^15.7.2"
+
+react-element-popper@^2.1.6:
+  version "2.1.7"
+  resolved "https://registry.npmjs.org/react-element-popper/-/react-element-popper-2.1.7.tgz"
+  integrity sha512-tuM2OxKlW32h+6uFSK6EENHPeZ2OGgOipHfOAl+VLWEv9/j3QkSGbD+ADX3A9uJlmq24i37n28RjJmAbGTfpEg==
 
 react-fast-compare@^3.0.1:
   version "3.2.1"
@@ -3380,6 +3390,14 @@ react-is@^19.0.0:
   version "19.1.0"
   resolved "https://registry.npmjs.org/react-is/-/react-is-19.1.0.tgz"
   integrity sha512-Oe56aUPnkHyyDxxkvqtd7KkdQP5uIUfHxd5XTb3wE9d/kRnZLmKbDB0GWk919tdQ+mxxPtG6EAs6RMT6i1qtHg==
+
+react-multi-date-picker@^4.5.2:
+  version "4.5.2"
+  resolved "https://registry.npmjs.org/react-multi-date-picker/-/react-multi-date-picker-4.5.2.tgz"
+  integrity sha512-FgWjZB3Z6IA6XpcWiLPk85PwcRUhOiYhKK42o5k672gD/n2I6rzPfQ8bUrldOIiF/Z7FfOCdH7a6FeubzqteLg==
+  dependencies:
+    react-date-object "^2.1.8"
+    react-element-popper "^2.1.6"
 
 react-onclickoutside@^6.12.2:
   version "6.13.0"

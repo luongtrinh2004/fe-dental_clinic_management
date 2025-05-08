@@ -15,37 +15,19 @@ import {
   Paper,
   Typography,
   IconButton,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl
+  Button
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 const CustomersPage = () => {
   const [patients, setPatients] = useState([])
   const [search, setSearch] = useState('')
-  const [openDialog, setOpenDialog] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    gender: '',
-    dateOfBirth: '',
-    phone: '',
-    appointmentDate: '',
-    address: '',
-    medicalHistory: '',
-    note: '',
-    cost: 0,
-    nextAppointmentDate: '',
-    status: 'Đang điều trị'
-  })
-  const [editId, setEditId] = useState(null)
+  const router = useRouter()
 
   useEffect(() => {
     fetchPatients()
@@ -53,8 +35,17 @@ const CustomersPage = () => {
 
   const fetchPatients = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/v1/patients')
-      setPatients(response.data)
+      const response = await axios.get(`${API_URL}/v1/patients`)
+      const patientsWithHistory = await Promise.all(
+        response.data.map(async patient => {
+          const historyRes = await axios.get(`${API_URL}/v1/medical-history/patient/${patient._id}`)
+          return {
+            ...patient,
+            latestHistory: historyRes.data?.[0] || null
+          }
+        })
+      )
+      setPatients(patientsWithHistory)
     } catch (error) {
       console.error('Lỗi lấy danh sách bệnh nhân:', error)
     }
@@ -70,7 +61,7 @@ const CustomersPage = () => {
   const handleDelete = async id => {
     if (window.confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
       try {
-        await axios.delete(`http://localhost:5000/v1/patients/${id}`)
+        await axios.delete(`${API_URL}/v1/patients/${id}`)
         fetchPatients()
       } catch (error) {
         console.error('Lỗi xóa bệnh nhân:', error)
@@ -79,53 +70,7 @@ const CustomersPage = () => {
   }
 
   const handleEdit = patient => {
-    setFormData({
-      name: patient.name,
-      gender: patient.gender,
-      dateOfBirth: patient.dateOfBirth ? patient.dateOfBirth.substring(0, 10) : '',
-      phone: patient.phone,
-      appointmentDate: patient.appointmentDate ? patient.appointmentDate.substring(0, 10) : '',
-      address: patient.address,
-      medicalHistory: patient.medicalHistory || '',
-      note: patient.note || '',
-      cost: patient.cost || 0,
-      nextAppointmentDate: patient.nextAppointmentDate ? patient.nextAppointmentDate.substring(0, 10) : '',
-      status: patient.status
-    })
-    setEditId(patient._id)
-    setOpenDialog(true)
-  }
-
-  const handleAdd = () => {
-    setFormData({
-      name: '',
-      gender: '',
-      dateOfBirth: '',
-      phone: '',
-      appointmentDate: '',
-      address: '',
-      medicalHistory: '',
-      note: '',
-      cost: 0,
-      nextAppointmentDate: '',
-      status: 'Đang điều trị'
-    })
-    setEditId(null)
-    setOpenDialog(true)
-  }
-
-  const handleSubmit = async () => {
-    try {
-      if (editId) {
-        await axios.put(`http://localhost:5000/v1/patients/${editId}`, formData)
-      } else {
-        await axios.post('http://localhost:5000/v1/patients', formData)
-      }
-      setOpenDialog(false)
-      fetchPatients()
-    } catch (error) {
-      console.error('Lỗi thêm/sửa bệnh nhân:', error)
-    }
+    router.push(`/customers/update/${patient._id}`)
   }
 
   return (
@@ -142,9 +87,11 @@ const CustomersPage = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <Button variant='contained' onClick={handleAdd}>
-              + Thêm bệnh nhân
-            </Button>
+            <Link href='/customers/create' passHref>
+              <Button variant='contained' component='a'>
+                + Thêm bệnh nhân
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </Grid>
@@ -162,12 +109,11 @@ const CustomersPage = () => {
                     <TableCell>Giới tính</TableCell>
                     <TableCell>Ngày sinh</TableCell>
                     <TableCell>Số điện thoại</TableCell>
-                    <TableCell>Ngày khám</TableCell>
                     <TableCell>Dịch vụ</TableCell>
                     <TableCell>Ghi chú</TableCell>
                     <TableCell>Chi phí</TableCell>
+                    <TableCell>Ngày khám</TableCell>
                     <TableCell>Hẹn tái khám</TableCell>
-                    <TableCell>Trạng thái</TableCell>
                     <TableCell>Hành động</TableCell>
                   </TableRow>
                 </TableHead>
@@ -181,20 +127,21 @@ const CustomersPage = () => {
                         {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
                       </TableCell>
                       <TableCell>{patient.phone}</TableCell>
+                      <TableCell>{patient.latestHistory?.medicalService || 'N/A'}</TableCell>
+                      <TableCell>{patient.latestHistory?.note || 'N/A'}</TableCell>
+                      <TableCell>{(patient.latestHistory?.cost || 0).toLocaleString()} ₫</TableCell>
                       <TableCell>
-                        {patient.appointmentDate
-                          ? new Date(patient.appointmentDate).toLocaleDateString('vi-VN')
+                        {patient.latestHistory?.appointmentDate
+                          ? new Date(patient.latestHistory.appointmentDate).toLocaleDateString('vi-VN')
                           : 'Chưa khám'}
                       </TableCell>
-                      <TableCell>{patient.medicalHistory || 'N/A'}</TableCell>
-                      <TableCell>{patient.note || 'N/A'}</TableCell>
-                      <TableCell>{patient.cost?.toLocaleString() || '0'} ₫</TableCell>
                       <TableCell>
-                        {patient.nextAppointmentDate
-                          ? new Date(patient.nextAppointmentDate).toLocaleDateString('vi-VN')
+                        {patient.latestHistory?.nextAppointmentDates?.length > 0
+                          ? new Date(patient.latestHistory.nextAppointmentDates.slice(-1)[0]).toLocaleDateString(
+                              'vi-VN'
+                            )
                           : 'Chưa hẹn'}
                       </TableCell>
-                      <TableCell>{patient.status}</TableCell>
                       <TableCell>
                         <IconButton color='primary' onClick={() => handleEdit(patient)}>
                           <EditIcon />
@@ -216,104 +163,6 @@ const CustomersPage = () => {
           </CardContent>
         </Card>
       </Grid>
-
-      {/* Form Thêm/Sửa bệnh nhân */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth='sm' fullWidth>
-        <DialogTitle>{editId ? 'Sửa thông tin bệnh nhân' : 'Thêm bệnh nhân mới'}</DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-          <TextField
-            label='Họ tên'
-            value={formData.name}
-            onChange={e => setFormData({ ...formData, name: e.target.value })}
-            fullWidth
-          />
-          <FormControl fullWidth>
-            <InputLabel>Giới tính</InputLabel>
-            <Select
-              value={formData.gender}
-              label='Giới tính'
-              onChange={e => setFormData({ ...formData, gender: e.target.value })}
-            >
-              <MenuItem value='Nam'>Nam</MenuItem>
-              <MenuItem value='Nữ'>Nữ</MenuItem>
-              <MenuItem value='Khác'>Khác</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField
-            label='Ngày sinh'
-            type='date'
-            value={formData.dateOfBirth}
-            onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label='Số điện thoại'
-            value={formData.phone}
-            onChange={e => setFormData({ ...formData, phone: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label='Ngày khám'
-            type='date'
-            value={formData.appointmentDate}
-            onChange={e => setFormData({ ...formData, appointmentDate: e.target.value })}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label='Địa chỉ'
-            value={formData.address}
-            onChange={e => setFormData({ ...formData, address: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label='Dịch vụ'
-            value={formData.medicalHistory}
-            onChange={e => setFormData({ ...formData, medicalHistory: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label='Ghi chú'
-            value={formData.note}
-            onChange={e => setFormData({ ...formData, note: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label='Chi phí'
-            type='number'
-            value={formData.cost}
-            onChange={e => setFormData({ ...formData, cost: e.target.value })}
-            fullWidth
-          />
-          <TextField
-            label='Ngày hẹn tái khám'
-            type='date'
-            value={formData.nextAppointmentDate}
-            onChange={e => setFormData({ ...formData, nextAppointmentDate: e.target.value })}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <FormControl fullWidth>
-            <InputLabel>Trạng thái</InputLabel>
-            <Select
-              value={formData.status}
-              label='Trạng thái'
-              onChange={e => setFormData({ ...formData, status: e.target.value })}
-            >
-              <MenuItem value='Đang điều trị'>Đang điều trị</MenuItem>
-              <MenuItem value='Hoàn thành điều trị'>Hoàn thành điều trị</MenuItem>
-              <MenuItem value='Hủy bỏ điều trị'>Hủy bỏ điều trị</MenuItem>
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
-          <Button variant='contained' onClick={handleSubmit}>
-            {editId ? 'Cập nhật' : 'Thêm mới'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Grid>
   )
 }
