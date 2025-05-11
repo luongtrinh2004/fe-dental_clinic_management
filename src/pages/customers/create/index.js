@@ -1,3 +1,4 @@
+/* eslint-disable padding-line-between-statements */
 import { useState } from 'react'
 import {
   Grid,
@@ -67,6 +68,7 @@ const CreatePatientsPage = () => {
 
       if (!name || !gender || !dateOfBirth || !phone || !address) {
         alert('Vui lòng nhập đầy đủ thông tin bệnh nhân!')
+
         return
       }
 
@@ -229,6 +231,11 @@ const CreatePatientsPage = () => {
       </Grid>
     </Grid>
   )
+}
+
+CreatePatientsPage.acl = {
+  action: 'read',
+  subject: 'create-customer-page'
 }
 
 export default CreatePatientsPage

@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 
 export const AuthService = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL + '/v1',
-  timeout: 50000
+  timeout: 5000
 })
 
 AuthService.interceptors.request.use(

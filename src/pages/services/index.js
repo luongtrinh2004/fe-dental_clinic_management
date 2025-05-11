@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable padding-line-between-statements */
+/* eslint-disable newline-before-return */
 import { useEffect, useState, Fragment } from 'react'
 import axios from 'axios'
 import {
@@ -207,6 +210,11 @@ const ServicePage = () => {
       </Grid>
     </Grid>
   )
+}
+
+ServicePage.acl = {
+  action: 'read',
+  subject: 'service-page'
 }
 
 export default ServicePage

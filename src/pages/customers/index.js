@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable padding-line-between-statements */
+/* eslint-disable newline-before-return */
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
@@ -207,6 +210,11 @@ const CustomersPage = () => {
       </Grid>
     </Grid>
   )
+}
+
+CustomersPage.acl = {
+  action: 'read',
+  subject: 'customer-page'
 }
 
 export default CustomersPage

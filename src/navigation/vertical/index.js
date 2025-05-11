@@ -8,24 +8,39 @@ const navigation = () => {
       subject: 'home-page'
     },
     {
-      path: '/acl',
-      title: 'Access Control',
-      icon: 'tabler:shield'
+      title: 'Quản lý người dùng',
+      icon: 'tabler:user-cog',
+      children: [
+        {
+          title: 'Quản trị',
+          path: '/users/admin'
+        },
+        {
+          title: 'Nhân viên',
+          path: '/users/staff'
+        }
+      ]
     },
     {
       path: '/customers',
       title: 'Khách Hàng',
-      icon: 'tabler:users'
+      icon: 'tabler:users',
+      action: 'read',
+      subject: 'customer-page'
     },
     {
       path: '/services',
       title: 'Dịch Vụ',
-      icon: 'tabler:tools'
+      icon: 'tabler:tools',
+      action: 'read',
+      subject: 'service-page'
     },
     {
       path: '/settings',
       title: 'Cài Đặt',
-      icon: 'tabler:settings'
+      icon: 'tabler:settings',
+      action: 'read',
+      subject: 'setting-page'
     }
   ]
 }

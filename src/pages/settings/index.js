@@ -130,4 +130,9 @@ const SettingsPage = () => {
   )
 }
 
+SettingsPage.acl = {
+  action: 'read',
+  subject: 'setting-page'
+}
+
 export default SettingsPage

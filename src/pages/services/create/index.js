@@ -82,6 +82,7 @@ const CreateServicePage = () => {
     if (!token) {
       alert('Bạn chưa đăng nhập')
       router.push('/auth/login')
+
       return
     }
 
@@ -189,6 +190,10 @@ const CreateServicePage = () => {
       </Grid>
     </Grid>
   )
+}
+CreateServicePage.acl = {
+  action: 'read',
+  subject: 'create-service-page'
 }
 
 export default CreateServicePage

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { Grid, Card, CardHeader, CardContent, TextField, Button, Typography, IconButton, Box } from '@mui/material'
@@ -21,6 +22,7 @@ const UpdateServicePage = () => {
     if (!token) {
       alert('Bạn chưa đăng nhập')
       router.push('/auth/login')
+
       return
     }
 
@@ -103,6 +105,7 @@ const UpdateServicePage = () => {
     if (!token) {
       alert('Bạn chưa đăng nhập')
       router.push('/auth/login')
+
       return
     }
 
@@ -199,6 +202,11 @@ const UpdateServicePage = () => {
       </Grid>
     </Grid>
   )
+}
+
+UpdateServicePage.acl = {
+  action: 'read',
+  subject: 'update-service-page'
 }
 
 export default UpdateServicePage

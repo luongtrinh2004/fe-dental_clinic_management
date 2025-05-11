@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
@@ -236,6 +237,11 @@ const UpdateCustomerPage = () => {
       </Grid>
     </Grid>
   )
+}
+
+UpdateCustomerPage.acl = {
+  action: 'read',
+  subject: 'update-customer-page'
 }
 
 export default UpdateCustomerPage
