@@ -94,7 +94,7 @@ const CreatePatientsPage = () => {
       // 2. Tạo lịch sử khám nếu có nhập
       if (formData.medicalService && formData.appointmentDate) {
         await axios.post(
-          `${API_URL}/v1/medical-history`,
+          `${API_URL}/v1/medical-histories`,
           {
             patientId: createdPatientId,
             medicalService: formData.medicalService,

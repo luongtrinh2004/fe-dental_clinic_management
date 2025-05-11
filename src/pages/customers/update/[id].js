@@ -46,7 +46,7 @@ const UpdateCustomerPage = () => {
 
       const [patientRes, historyRes] = await Promise.all([
         axios.get(`${API_URL}/v1/patients/${id}`, { headers }),
-        axios.get(`${API_URL}/v1/medical-history/patient/${id}`, { headers })
+        axios.get(`${API_URL}/v1/medical-histories/patient/${id}`, { headers })
       ])
 
       const fetchedPatient = patientRes.data
@@ -108,9 +108,9 @@ const UpdateCustomerPage = () => {
         }
 
         if (history._id) {
-          await axios.patch(`${API_URL}/v1/medical-history/${history._id}`, payload, { headers })
+          await axios.patch(`${API_URL}/v1/medical-histories/${history._id}`, payload, { headers })
         } else {
-          await axios.post(`${API_URL}/v1/medical-history`, { ...payload, patientId: id }, { headers })
+          await axios.post(`${API_URL}/v1/medical-histories`, { ...payload, patientId: id }, { headers })
         }
       }
 
