@@ -20,8 +20,15 @@ import DatePicker from 'react-multi-date-picker'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+const genderMap = {
+  Nam: 0,
+  Nữ: 1,
+  Khác: 2
+}
+
 const CreatePatientsPage = () => {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     gender: '',
@@ -56,36 +63,57 @@ const CreatePatientsPage = () => {
   const handleSubmit = async () => {
     try {
       const { name, gender, dateOfBirth, phone, address } = formData
+      const token = localStorage.getItem('accessToken')
 
       if (!name || !gender || !dateOfBirth || !phone || !address) {
         alert('Vui lòng nhập đầy đủ thông tin bệnh nhân!')
         return
       }
 
-      const patientRes = await axios.post(`${API_URL}/v1/patients`, {
-        name,
-        gender,
-        dateOfBirth,
-        phone,
-        address
-      })
+      setIsLoading(true)
 
+      // 1. Tạo bệnh nhân
+      const patientRes = await axios.post(
+        `${API_URL}/v1/patients`,
+        {
+          name,
+          gender: genderMap[gender],
+          dateOfBirth,
+          phone,
+          address
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+
+      const createdPatientId = patientRes.data._id || patientRes.data.id
+
+      // 2. Tạo lịch sử khám nếu có nhập
       if (formData.medicalService && formData.appointmentDate) {
-        await axios.post(`${API_URL}/v1/medical-history`, {
-          patientId: patientRes.data._id,
-          medicalService: formData.medicalService,
-          note: formData.note || '',
-          cost: parseInt(formData.cost || 0),
-          appointmentDate: formData.appointmentDate,
-          nextAppointmentDates: formData.nextAppointmentDates || []
-        })
+        await axios.post(
+          `${API_URL}/v1/medical-history`,
+          {
+            patientId: createdPatientId,
+            medicalService: formData.medicalService,
+            note: formData.note || '',
+            cost: parseInt(formData.cost || 0),
+            appointmentDate: formData.appointmentDate,
+            nextAppointmentDates: formData.nextAppointmentDates || []
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        )
       }
 
       alert('Tạo bệnh nhân thành công!')
       router.push('/customers')
     } catch (error) {
-      console.error('Lỗi khi tạo bệnh nhân:', error)
-      alert('Có lỗi xảy ra. Vui lòng kiểm tra lại.')
+      console.error('Lỗi khi tạo bệnh nhân:', error.response?.data || error.message)
+      alert('Đã xảy ra lỗi. Vui lòng kiểm tra lại dữ liệu!')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -162,7 +190,6 @@ const CreatePatientsPage = () => {
             />
 
             <Typography variant='body2'>Ngày hẹn tái khám</Typography>
-
             <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ mb: 1 }}>
               {formData.nextAppointmentDates.map((date, index) => (
                 <Chip
@@ -194,8 +221,8 @@ const CreatePatientsPage = () => {
               </Button>
             </Stack>
 
-            <Button variant='contained' sx={{ mt: 2 }} onClick={handleSubmit}>
-              Tạo bệnh nhân
+            <Button variant='contained' sx={{ mt: 2 }} onClick={handleSubmit} disabled={isLoading}>
+              {isLoading ? 'Đang tạo...' : 'Tạo bệnh nhân'}
             </Button>
           </CardContent>
         </Card>

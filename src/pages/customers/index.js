@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import {
   Grid,
   Card,
@@ -15,7 +17,8 @@ import {
   Paper,
   Typography,
   IconButton,
-  Button
+  Button,
+  Stack
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -23,48 +26,71 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
+const LIMIT = 20
 
 const CustomersPage = () => {
   const [patients, setPatients] = useState([])
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const router = useRouter()
 
   useEffect(() => {
     fetchPatients()
-  }, [])
+  }, [page])
 
   const fetchPatients = async () => {
     try {
-      const response = await axios.get(`${API_URL}/v1/patients`)
+      const token = localStorage.getItem('accessToken')
+      const { data } = await axios.get(`${API_URL}/v1/patients?page=${page}&limit=${LIMIT}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
       const patientsWithHistory = await Promise.all(
-        response.data.map(async patient => {
-          const historyRes = await axios.get(`${API_URL}/v1/medical-history/patient/${patient._id}`)
-          return {
-            ...patient,
-            latestHistory: historyRes.data?.[0] || null
+        data.results.map(async patient => {
+          const patientId = patient.id || patient._id
+          try {
+            const historyRes = await axios.get(`${API_URL}/v1/medical-history/patient/${patientId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            return {
+              ...patient,
+              _id: patientId,
+              latestHistory: historyRes.data?.[0] || null
+            }
+          } catch {
+            return { ...patient, _id: patientId, latestHistory: null }
           }
         })
       )
+
       setPatients(patientsWithHistory)
+      setTotalPages(data.totalPages || 1)
     } catch (error) {
-      console.error('Lỗi lấy danh sách bệnh nhân:', error)
+      console.error('❌ Lỗi lấy danh sách bệnh nhân:', error)
     }
   }
 
-  const filteredPatients = patients.filter(
-    patient =>
-      patient.name.toLowerCase().includes(search.toLowerCase()) ||
-      patient.phone.includes(search) ||
-      (patient.patientCode && patient.patientCode.includes(search))
-  )
+  const filteredPatients = patients.filter(p => {
+    const keyword = search.toLowerCase()
+    return (
+      !search ||
+      p.name?.toLowerCase().includes(keyword) ||
+      p.phone?.includes(keyword) ||
+      p.patientCode?.includes(keyword)
+    )
+  })
 
   const handleDelete = async id => {
     if (window.confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
       try {
-        await axios.delete(`${API_URL}/v1/patients/${id}`)
+        const token = localStorage.getItem('accessToken')
+        await axios.delete(`${API_URL}/v1/patients/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
         fetchPatients()
       } catch (error) {
-        console.error('Lỗi xóa bệnh nhân:', error)
+        console.error('❌ Lỗi xóa bệnh nhân:', error)
       }
     }
   }
@@ -81,13 +107,11 @@ const CustomersPage = () => {
           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TextField
               label='Nhập tên, mã BN hoặc số điện thoại'
-              variant='outlined'
               fullWidth
-              size='medium'
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <Link href='/customers/create' passHref>
+            <Link href='/customers/create' passHref legacyBehavior>
               <Button variant='contained' component='a'>
                 + Thêm bệnh nhân
               </Button>
@@ -122,7 +146,7 @@ const CustomersPage = () => {
                     <TableRow key={patient._id}>
                       <TableCell>{patient.patientCode || 'N/A'}</TableCell>
                       <TableCell>{patient.name}</TableCell>
-                      <TableCell>{patient.gender}</TableCell>
+                      <TableCell>{patient.gender === 0 ? 'Nam' : patient.gender === 1 ? 'Nữ' : 'Khác'}</TableCell>
                       <TableCell>
                         {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
                       </TableCell>
@@ -155,6 +179,24 @@ const CustomersPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* Pagination */}
+            <Stack direction='row' justifyContent='flex-end' alignItems='center' spacing={1} sx={{ mt: 2 }}>
+              <IconButton onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} size='small'>
+                <ChevronLeftIcon />
+              </IconButton>
+              <Typography variant='body2'>
+                Trang {page} / {totalPages}
+              </Typography>
+              <IconButton
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                size='small'
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            </Stack>
+
             {filteredPatients.length === 0 && (
               <Typography variant='body2' align='center' sx={{ mt: 2 }}>
                 Không tìm thấy bệnh nhân nào

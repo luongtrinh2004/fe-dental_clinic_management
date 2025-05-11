@@ -20,6 +20,9 @@ import DatePicker from 'react-multi-date-picker'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+const genderLabel = ['Nam', 'Nữ', 'Khác']
+const genderValue = { Nam: 0, Nữ: 1, Khác: 2 }
+
 const UpdateCustomerPage = () => {
   const router = useRouter()
   const { id } = router.query
@@ -30,17 +33,28 @@ const UpdateCustomerPage = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (id) fetchPatientData()
+    if (id && typeof id === 'string') {
+      fetchPatientData()
+    }
   }, [id])
 
   const fetchPatientData = async () => {
     try {
-      const patientRes = await axios.get(`${API_URL}/v1/patients/${id}`)
-      const historyRes = await axios.get(`${API_URL}/v1/medical-history/patient/${id}`)
-      setPatient(patientRes.data)
+      const token = localStorage.getItem('accessToken')
+      const headers = { Authorization: `Bearer ${token}` }
+
+      const [patientRes, historyRes] = await Promise.all([
+        axios.get(`${API_URL}/v1/patients/${id}`, { headers }),
+        axios.get(`${API_URL}/v1/medical-history/patient/${id}`, { headers })
+      ])
+
+      const fetchedPatient = patientRes.data
+      fetchedPatient.gender = genderLabel[fetchedPatient.gender]
+
+      setPatient(fetchedPatient)
       setHistory(historyRes.data?.[0] || null)
     } catch (err) {
-      console.error('Lỗi khi tải dữ liệu:', err)
+      console.error(' Lỗi khi tải dữ liệu:', err.response?.data || err.message)
     } finally {
       setLoading(false)
     }
@@ -51,7 +65,7 @@ const UpdateCustomerPage = () => {
   }
 
   const handleHistoryChange = (field, value) => {
-    setHistory(prev => ({ ...prev, [field]: value }))
+    setHistory(prev => ({ ...(prev || {}), [field]: value }))
   }
 
   const handleAddDate = () => {
@@ -67,34 +81,47 @@ const UpdateCustomerPage = () => {
 
   const handleSubmit = async () => {
     try {
-      await axios.put(`${API_URL}/v1/patients/${id}`, patient)
+      const token = localStorage.getItem('accessToken')
+      const headers = { Authorization: `Bearer ${token}` }
 
+      // Chỉ gửi các trường được phép trong Joi schema
+      const updatePayload = {
+        name: patient.name,
+        gender: genderValue[patient.gender],
+        dateOfBirth: patient.dateOfBirth,
+        phone: patient.phone,
+        address: patient.address
+      }
+
+      // PATCH bệnh nhân
+      await axios.patch(`${API_URL}/v1/patients/${id}`, updatePayload, { headers })
+
+      // PATCH or POST lịch sử khám
       if (history?.appointmentDate && history.medicalService) {
         const payload = {
-          ...history,
+          medicalService: history.medicalService,
+          note: history.note || '',
           cost: parseInt(history.cost || 0),
+          appointmentDate: history.appointmentDate,
           nextAppointmentDates: history.nextAppointmentDates || []
         }
 
         if (history._id) {
-          await axios.put(`${API_URL}/v1/medical-history/${history._id}`, payload)
+          await axios.patch(`${API_URL}/v1/medical-history/${history._id}`, payload, { headers })
         } else {
-          await axios.post(`${API_URL}/v1/medical-history`, {
-            ...payload,
-            patientId: id
-          })
+          await axios.post(`${API_URL}/v1/medical-history`, { ...payload, patientId: id }, { headers })
         }
       }
 
       alert('Cập nhật thành công!')
       router.push('/customers')
     } catch (err) {
-      console.error('Lỗi cập nhật:', err)
-      alert('Cập nhật thất bại.')
+      console.error('Lỗi cập nhật:', err.response?.data || err.message)
+      alert('Cập nhật thất bại. Vui lòng thử lại!')
     }
   }
 
-  if (loading) return <Typography variant='body1'>Đang tải...</Typography>
+  if (loading) return <Typography variant='body1'>Đang tải dữ liệu...</Typography>
   if (!patient) return <Typography variant='body1'>Không tìm thấy bệnh nhân</Typography>
 
   return (
@@ -112,9 +139,11 @@ const UpdateCustomerPage = () => {
             <FormControl fullWidth>
               <InputLabel>Giới tính</InputLabel>
               <Select value={patient.gender} onChange={e => handleChange('gender', e.target.value)} label='Giới tính'>
-                <MenuItem value='Nam'>Nam</MenuItem>
-                <MenuItem value='Nữ'>Nữ</MenuItem>
-                <MenuItem value='Khác'>Khác</MenuItem>
+                {genderLabel.map(label => (
+                  <MenuItem key={label} value={label}>
+                    {label}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <TextField
@@ -170,7 +199,6 @@ const UpdateCustomerPage = () => {
             />
 
             <Typography variant='body2'>Ngày hẹn tái khám</Typography>
-
             <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ mb: 1 }}>
               {(history?.nextAppointmentDates || []).map((date, index) => (
                 <Chip
