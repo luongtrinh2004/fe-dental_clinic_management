@@ -1,5 +1,7 @@
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import {
   Grid,
   Card,
@@ -14,104 +16,104 @@ import {
   TableRow,
   Paper,
   Typography,
+  IconButton,
   Button,
-  Box
+  Stack
 } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
+const LIMIT = 20
 
-const ServicePage = () => {
-  const [services, setServices] = useState([])
+const CustomersPage = () => {
+  const [patients, setPatients] = useState([])
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const router = useRouter()
 
   useEffect(() => {
-    fetchServices()
-  }, [])
+    fetchPatients()
+  }, [page])
 
-  const fetchServices = async () => {
-    const token = localStorage.getItem('accessToken')
-    console.log('✅ FE token:', token)
-
-    if (!token) {
-      alert('Vui lòng đăng nhập')
-      router.push('/auth/login')
-      return
-    }
-
+  const fetchPatients = async () => {
     try {
-      const res = await axios.get(`${API_URL}/v1/services`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+      const token = localStorage.getItem('accessToken')
+      const { data } = await axios.get(`${API_URL}/v1/patients?page=${page}&limit=${LIMIT}`, {
+        headers: { Authorization: `Bearer ${token}` }
       })
-      console.log('✅ Gửi header:', `Bearer ${token}`)
-      setServices(res.data)
-    } catch (err) {
-      console.error('❌ Lỗi lấy danh sách dịch vụ:', err)
-      if (err.response?.status === 401) {
-        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
-        router.push('/auth/login')
+
+      const patientsWithHistory = await Promise.all(
+        data.results.map(async patient => {
+          const patientId = patient.id || patient._id
+          try {
+            const historyRes = await axios.get(`${API_URL}/v1/medical-history/patient/${patientId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            return {
+              ...patient,
+              _id: patientId,
+              latestHistory: historyRes.data?.[0] || null
+            }
+          } catch {
+            return { ...patient, _id: patientId, latestHistory: null }
+          }
+        })
+      )
+
+      setPatients(patientsWithHistory)
+      setTotalPages(data.totalPages || 1)
+    } catch (error) {
+      console.error('❌ Lỗi lấy danh sách bệnh nhân:', error)
+    }
+  }
+
+  const filteredPatients = patients.filter(p => {
+    const keyword = search.toLowerCase()
+    return (
+      !search ||
+      p.name?.toLowerCase().includes(keyword) ||
+      p.phone?.includes(keyword) ||
+      p.patientCode?.includes(keyword)
+    )
+  })
+
+  const handleDelete = async id => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa bệnh nhân này?')) {
+      try {
+        const token = localStorage.getItem('accessToken')
+        await axios.delete(`${API_URL}/v1/patients/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        fetchPatients()
+      } catch (error) {
+        console.error('❌ Lỗi xóa bệnh nhân:', error)
       }
     }
   }
 
-  const handleEdit = serviceId => {
-    router.push(`/services/update/${serviceId}`)
+  const handleEdit = patient => {
+    router.push(`/customers/update/${patient._id}`)
   }
-
-  const handleDelete = async serviceId => {
-    const token = localStorage.getItem('accessToken')
-    if (!token) {
-      alert('Vui lòng đăng nhập')
-      return
-    }
-
-    if (!window.confirm('Bạn có chắc chắn muốn xoá dịch vụ này?')) return
-
-    try {
-      await axios.delete(`${API_URL}/v1/services/${serviceId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      fetchServices()
-    } catch (err) {
-      console.error('❌ Lỗi khi xoá dịch vụ:', err)
-      alert('Xoá thất bại. Vui lòng thử lại.')
-    }
-  }
-
-  const filteredServices = services.filter(service => {
-    const keyword = search.toLowerCase()
-    const matchTitle = (service.title || '').toLowerCase().includes(keyword)
-    const matchGroup = (service.services || []).some(group => {
-      const groupName = (group.name || '').toLowerCase().includes(keyword)
-      const matchType = (group.types || []).some(
-        t => (t.type || '').toLowerCase().includes(keyword) || (t.price || '').toLowerCase().includes(keyword)
-      )
-      return groupName || matchType
-    })
-    return matchTitle || matchGroup
-  })
 
   return (
     <Grid container spacing={6}>
       <Grid item xs={12}>
         <Card>
-          <CardHeader title='Tra cứu bảng giá dịch vụ' />
-          <CardContent sx={{ display: 'flex', gap: 2 }}>
+          <CardHeader title='Tìm kiếm bệnh nhân' />
+          <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <TextField
+              label='Nhập tên, mã BN hoặc số điện thoại'
               fullWidth
-              label='Tìm theo tên danh mục'
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            <Link href='/services/create' passHref legacyBehavior>
+            <Link href='/customers/create' passHref legacyBehavior>
               <Button variant='contained' component='a'>
-                + Thêm dịch vụ
+                + Thêm bệnh nhân
               </Button>
             </Link>
           </CardContent>
@@ -120,75 +122,86 @@ const ServicePage = () => {
 
       <Grid item xs={12}>
         <Card>
-          <CardHeader title='Bảng giá dịch vụ' />
+          <CardHeader title='Danh sách bệnh nhân' />
           <CardContent>
             <TableContainer component={Paper}>
               <Table size='small'>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: '#f0f0f0' }}>
-                    <TableCell width='25%'>Tên dịch vụ</TableCell>
-                    <TableCell width='20%'>Loại</TableCell>
-                    <TableCell width='20%'>Thành tiền</TableCell>
-                    <TableCell width='15%'>Bảo hành</TableCell>
-                    <TableCell width='20%' align='center'>
-                      Hành động
-                    </TableCell>
+                  <TableRow>
+                    <TableCell>Mã BN</TableCell>
+                    <TableCell>Họ tên</TableCell>
+                    <TableCell>Giới tính</TableCell>
+                    <TableCell>Ngày sinh</TableCell>
+                    <TableCell>Số điện thoại</TableCell>
+                    <TableCell>Dịch vụ</TableCell>
+                    <TableCell>Ghi chú</TableCell>
+                    <TableCell>Chi phí</TableCell>
+                    <TableCell>Ngày khám</TableCell>
+                    <TableCell>Hẹn tái khám</TableCell>
+                    <TableCell>Hành động</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredServices.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5}>
-                        <Typography align='center'>Không tìm thấy dịch vụ</Typography>
+                  {filteredPatients.map(patient => (
+                    <TableRow key={patient._id}>
+                      <TableCell>{patient.patientCode || 'N/A'}</TableCell>
+                      <TableCell>{patient.name}</TableCell>
+                      <TableCell>{patient.gender === 0 ? 'Nam' : patient.gender === 1 ? 'Nữ' : 'Khác'}</TableCell>
+                      <TableCell>
+                        {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
+                      </TableCell>
+                      <TableCell>{patient.phone}</TableCell>
+                      <TableCell>{patient.latestHistory?.medicalService || 'N/A'}</TableCell>
+                      <TableCell>{patient.latestHistory?.note || 'N/A'}</TableCell>
+                      <TableCell>{(patient.latestHistory?.cost || 0).toLocaleString()} ₫</TableCell>
+                      <TableCell>
+                        {patient.latestHistory?.appointmentDate
+                          ? new Date(patient.latestHistory.appointmentDate).toLocaleDateString('vi-VN')
+                          : 'Chưa khám'}
+                      </TableCell>
+                      <TableCell>
+                        {patient.latestHistory?.nextAppointmentDates?.length > 0
+                          ? new Date(patient.latestHistory.nextAppointmentDates.slice(-1)[0]).toLocaleDateString(
+                              'vi-VN'
+                            )
+                          : 'Chưa hẹn'}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton color='primary' onClick={() => handleEdit(patient)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton color='error' onClick={() => handleDelete(patient._id)}>
+                          <DeleteIcon />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredServices.map((section, i) => {
-                      const totalRows = section.services.reduce((acc, srv) => acc + (srv.types?.length || 1), 0)
-                      return (
-                        <Fragment key={section._id || i}>
-                          {section.title && (
-                            <TableRow sx={{ bgcolor: '#1976d2' }}>
-                              <TableCell colSpan={5} sx={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>
-                                {section.title.toUpperCase()}
-                              </TableCell>
-                            </TableRow>
-                          )}
-                          {section.services.map((srv, j) => {
-                            const types = srv.types?.length > 0 ? srv.types : [srv]
-                            return types.map((t, k) => (
-                              <TableRow key={`${i}-${j}-${k}`}>
-                                {k === 0 && <TableCell rowSpan={types.length}>{srv.name || '-'}</TableCell>}
-                                <TableCell>{t.type || '-'}</TableCell>
-                                <TableCell>{t.price || '-'}</TableCell>
-                                <TableCell>{t.warranty || '-'}</TableCell>
-                                {j === 0 && k === 0 && (
-                                  <TableCell rowSpan={totalRows} align='center'>
-                                    <Box display='flex' gap={1} justifyContent='center'>
-                                      <Button size='small' variant='outlined' onClick={() => handleEdit(section._id)}>
-                                        Chỉnh sửa
-                                      </Button>
-                                      <Button
-                                        size='small'
-                                        variant='outlined'
-                                        color='error'
-                                        onClick={() => handleDelete(section._id)}
-                                      >
-                                        Xoá
-                                      </Button>
-                                    </Box>
-                                  </TableCell>
-                                )}
-                              </TableRow>
-                            ))
-                          })}
-                        </Fragment>
-                      )
-                    })
-                  )}
+                  ))}
                 </TableBody>
               </Table>
             </TableContainer>
+
+            {/* Pagination */}
+            <Stack direction='row' justifyContent='flex-end' alignItems='center' spacing={1} sx={{ mt: 2 }}>
+              <IconButton onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} size='small'>
+                <ChevronLeftIcon />
+              </IconButton>
+              <Typography variant='body2'>
+                Trang {page} / {totalPages}
+              </Typography>
+              <IconButton
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                size='small'
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            </Stack>
+
+            {filteredPatients.length === 0 && (
+              <Typography variant='body2' align='center' sx={{ mt: 2 }}>
+                Không tìm thấy bệnh nhân nào
+              </Typography>
+            )}
           </CardContent>
         </Card>
       </Grid>
@@ -196,4 +209,4 @@ const ServicePage = () => {
   )
 }
 
-export default ServicePage
+export default CustomersPage
