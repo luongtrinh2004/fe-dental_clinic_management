@@ -53,7 +53,7 @@ const CustomersPage = () => {
         data.results.map(async patient => {
           const patientId = patient.id || patient._id
           try {
-            const historyRes = await axios.get(`${API_URL}/v1/medical-history/patient/${patientId}`, {
+            const historyRes = await axios.get(`${API_URL}/v1/medical-histories/patient/${patientId}`, {
               headers: { Authorization: `Bearer ${token}` }
             })
             return {
