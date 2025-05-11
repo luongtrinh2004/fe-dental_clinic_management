@@ -39,6 +39,7 @@ const ServicePage = () => {
     if (!token) {
       alert('Bạn chưa đăng nhập. Vui lòng đăng nhập lại.')
       router.push('/auth/login')
+
       return
     }
 
