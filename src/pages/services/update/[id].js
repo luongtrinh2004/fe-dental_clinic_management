@@ -17,11 +17,25 @@ const UpdateServicePage = () => {
   })
 
   const fetchService = async () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      alert('Bạn chưa đăng nhập')
+      router.push('/auth/login')
+      return
+    }
+
     try {
-      const res = await axios.get(`${API_URL}/v1/services/${id}`)
+      const res = await axios.get(`${API_URL}/v1/services/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
       setFormData(res.data)
     } catch (err) {
-      console.error('Lỗi khi tải dịch vụ:', err)
+      console.error('❌ Lỗi khi tải dịch vụ:', err)
+      if (err.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        router.push('/auth/login')
+      }
     }
   }
 
@@ -70,14 +84,47 @@ const UpdateServicePage = () => {
     setFormData(prev => ({ ...prev, services: updated }))
   }
 
+  const cleanPayload = () => {
+    return {
+      title: formData.title,
+      services: formData.services.map(service => ({
+        name: service.name,
+        types: (service.types || []).map(t => ({
+          type: t.type,
+          price: t.price,
+          warranty: t.warranty
+        }))
+      }))
+    }
+  }
+
   const handleSubmit = async () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      alert('Bạn chưa đăng nhập')
+      router.push('/auth/login')
+      return
+    }
+
     try {
-      await axios.put(`${API_URL}/v1/services/${id}`, formData)
+      const cleanedData = cleanPayload()
+
+      await axios.put(`${API_URL}/v1/services/${id}`, cleanedData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
       alert('Cập nhật thành công!')
       router.push('/services')
     } catch (err) {
-      console.error('Lỗi khi cập nhật:', err)
-      alert('Cập nhật thất bại.')
+      console.error('❌ Lỗi khi cập nhật:', err)
+      if (err.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        router.push('/auth/login')
+      } else {
+        alert('Cập nhật thất bại.')
+      }
     }
   }
 

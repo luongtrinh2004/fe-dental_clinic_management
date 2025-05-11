@@ -62,14 +62,48 @@ const CreateServicePage = () => {
     setFormData(prev => ({ ...prev, services: updated }))
   }
 
+  // 🧼 Clean dữ liệu để tránh gửi các field như _id, __v
+  const cleanPayload = () => {
+    return {
+      title: formData.title,
+      services: formData.services.map(service => ({
+        name: service.name,
+        types: (service.types || []).map(t => ({
+          type: t.type,
+          price: t.price,
+          warranty: t.warranty
+        }))
+      }))
+    }
+  }
+
   const handleSubmit = async () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      alert('Bạn chưa đăng nhập')
+      router.push('/auth/login')
+      return
+    }
+
     try {
-      await axios.post(`${API_URL}/v1/services`, formData)
+      const cleaned = cleanPayload()
+
+      await axios.post(`${API_URL}/v1/services`, cleaned, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
       alert('Tạo dịch vụ thành công!')
       router.push('/services')
     } catch (err) {
-      console.error('Lỗi tạo dịch vụ:', err)
-      alert('Có lỗi xảy ra. Vui lòng kiểm tra lại.')
+      console.error('❌ Lỗi tạo dịch vụ:', err)
+      if (err.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
+        router.push('/auth/login')
+      } else {
+        alert('Có lỗi xảy ra. Vui lòng kiểm tra lại.')
+      }
     }
   }
 
